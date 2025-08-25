@@ -1,0 +1,673 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Layout, Play, Quote, Tag, X, Star, Save, Trash2, Grid3X3, List, Zap, Heart, Trophy } from 'lucide-react';
+import { useWidgets, useTestimonials, useCollectionLinks, Widget } from '../../hooks/useTestimonials';
+
+// Widget Preview Component (same as CreateWidget)
+const WidgetPreview: React.FC<{
+  type: string;
+  theme: string;
+  animationStyle: string;
+  showRatings: boolean;
+  showAvatars: boolean;
+  showCompany: boolean;
+  autoplay: boolean;
+  testimonials: any[];
+  maxTestimonials: number;
+}> = ({ 
+  type, 
+  theme, 
+  animationStyle, 
+  showRatings, 
+  showAvatars, 
+  showCompany, 
+  autoplay, 
+  testimonials, 
+  maxTestimonials 
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const displayTestimonials = testimonials.slice(0, maxTestimonials);
+
+  // Auto-advance carousel
+  React.useEffect(() => {
+    if (type === 'carousel' && autoplay && displayTestimonials.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentIndex(prev => (prev + 1) % displayTestimonials.length);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [type, autoplay, displayTestimonials.length]);
+
+  const getAnimationClass = () => {
+    switch (animationStyle) {
+      case 'fade': return 'animate-fade-in';
+      case 'slide': return 'animate-slide-up';
+      case 'scale': return 'animate-scale-in';
+      case 'bounce': return 'animate-bounce';
+      default: return '';
+    }
+  };
+
+  const getThemeClasses = () => {
+    switch (theme) {
+      case 'dark': return 'bg-gray-900 text-white';
+      case 'auto': return 'bg-gray-100 text-gray-900';
+      default: return 'bg-white text-gray-900';
+    }
+  };
+
+  if (displayTestimonials.length === 0) {
+    return (
+      <div className={`rounded-xl p-6 ${getThemeClasses()} border-2 border-dashed border-gray-300`}>
+        <div className="text-center text-gray-500">
+          <Layout className="w-8 h-8 mx-auto mb-2" />
+          <p className="text-sm">No testimonials match your criteria</p>
+        </div>
+      </div>
+    );
+  }
+
+  const TestimonialCard: React.FC<{ testimonial: any; index?: number }> = ({ testimonial, index = 0 }) => (
+    <div className={`${getAnimationClass()} ${getThemeClasses()} rounded-lg p-4 border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} 
+         style={{ animationDelay: `${index * 100}ms` }}>
+      {/* Rating */}
+      {showRatings && (
+        <div className="flex items-center mb-2">
+          {[...Array(testimonial.rating)].map((_, i) => (
+            <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+          ))}
+        </div>
+      )}
+      
+      {/* Content */}
+      <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+        "{testimonial.content}"
+      </p>
+      
+      {/* Author */}
+      <div className="flex items-center space-x-2">
+        {showAvatars && (
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <span className="text-white text-xs font-semibold">
+              {testimonial.client_name[0]}
+            </span>
+          </div>
+        )}
+        <div>
+          <div className={`font-semibold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            {testimonial.client_name}
+          </div>
+          {showCompany && testimonial.company && (
+            <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+              {testimonial.company}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render based on widget type
+  switch (type) {
+    case 'wall':
+      return (
+        <div className={`rounded-xl p-4 ${getThemeClasses()} border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+          <div className="grid grid-cols-1 gap-3">
+            {displayTestimonials.map((testimonial, index) => (
+              <TestimonialCard key={testimonial.id} testimonial={testimonial} index={index} />
+            ))}
+          </div>
+        </div>
+      );
+
+    case 'carousel':
+      return (
+        <div className={`rounded-xl p-4 ${getThemeClasses()} border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} relative`}>
+          <div className="overflow-hidden">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            >
+              {displayTestimonials.map((testimonial) => (
+                <div key={testimonial.id} className="w-full flex-shrink-0">
+                  <TestimonialCard testimonial={testimonial} />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Carousel indicators */}
+          {displayTestimonials.length > 1 && (
+            <div className="flex justify-center space-x-2 mt-3">
+              {displayTestimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === currentIndex ? 'bg-blue-500' : theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+          
+          {/* Autoplay indicator */}
+          {autoplay && displayTestimonials.length > 1 && (
+            <div className="absolute top-2 right-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            </div>
+          )}
+        </div>
+      );
+
+    case 'single':
+      return (
+        <div className={`rounded-xl p-4 ${getThemeClasses()} border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
+          <TestimonialCard testimonial={displayTestimonials[0]} />
+        </div>
+      );
+
+    default:
+      return null;
+  }
+};
+
+const EditWidget: React.FC = () => {
+  const navigate = useNavigate();
+  const { widgetId } = useParams<{ widgetId: string }>();
+  const [selectedSources, setSelectedSources] = useState<string[]>(['direct']);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'wall',
+    theme: 'light',
+    max_testimonials: 10,
+    animation_style: 'fade',
+    show_ratings: true,
+    show_avatars: true,
+    show_company: true,
+    autoplay: false
+  });
+
+  const { widgets, updateWidget, deleteWidget } = useWidgets();
+  const { testimonials } = useTestimonials();
+  const { links } = useCollectionLinks();
+
+  // Load widget data
+  useEffect(() => {
+    if (widgetId && widgets.length > 0) {
+      const widget = widgets.find(w => w.id === widgetId);
+      if (widget) {
+        setFormData({
+          name: widget.widget_name,
+          type: widget.widget_type,
+          theme: widget.settings.theme,
+          max_testimonials: widget.settings.max_testimonials,
+          animation_style: widget.settings.animation_style,
+          show_ratings: widget.settings.show_ratings,
+          show_avatars: widget.settings.show_avatars,
+          show_company: widget.settings.show_company,
+          autoplay: widget.settings.autoplay
+        });
+        setSelectedSources(widget.settings.selected_sources || ['direct']);
+        setTags(widget.settings.filter_tags || []);
+      }
+    }
+  }, [widgetId, widgets]);
+
+  // Calculate real testimonial counts by source
+  const getSourceCounts = () => {
+    const counts = {
+      direct: testimonials.filter(t => t.source === 'direct').length,
+      instagram: testimonials.filter(t => t.source === 'instagram').length,
+      facebook: testimonials.filter(t => t.source === 'facebook').length,
+      x: testimonials.filter(t => t.source === 'x').length,
+      youtube: testimonials.filter(t => t.source === 'youtube').length
+    };
+    return counts;
+  };
+
+  const sourceCounts = getSourceCounts();
+  const availableSources = [
+    { id: 'direct', label: 'Direct Link Submissions', count: sourceCounts.direct },
+    { id: 'instagram', label: 'Instagram Imports', count: sourceCounts.instagram },
+    { id: 'facebook', label: 'Facebook Imports', count: sourceCounts.facebook },
+    { id: 'x', label: 'X (Twitter) Imports', count: sourceCounts.x },
+    { id: 'youtube', label: 'YouTube Imports', count: sourceCounts.youtube }
+  ];
+
+  const handleSourceToggle = (sourceId: string) => {
+    setSelectedSources(prev => 
+      prev.includes(sourceId) 
+        ? prev.filter(id => id !== sourceId)
+        : [...prev, sourceId]
+    );
+  };
+
+  const handleSelectAllSources = () => {
+    if (selectedSources.length === availableSources.length) {
+      setSelectedSources([]);
+    } else {
+      setSelectedSources(availableSources.map(source => source.id));
+    }
+  };
+
+  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && tagInput.trim()) {
+      e.preventDefault();
+      if (!tags.includes(tagInput.trim())) {
+        setTags(prev => [...prev, tagInput.trim()]);
+      }
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(prev => prev.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
+               name === 'max_testimonials' ? parseInt(value) : value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!widgetId) return;
+    
+    setLoading(true);
+
+    try {
+      await updateWidget(widgetId, {
+        widget_name: formData.name,
+        widget_type: formData.type,
+        settings: {
+          theme: formData.theme,
+          max_testimonials: formData.max_testimonials,
+          animation_style: formData.animation_style,
+          show_ratings: formData.show_ratings,
+          show_avatars: formData.show_avatars,
+          show_company: formData.show_company,
+          autoplay: formData.autoplay,
+          selected_sources: selectedSources,
+          filter_tags: tags
+        }
+      });
+      
+      navigate('/dashboard/widgets');
+    } catch (error) {
+      console.error('Error updating widget:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!widgetId) return;
+    
+    if (confirm('Are you sure you want to delete this widget? This action cannot be undone.')) {
+      try {
+        await deleteWidget(widgetId);
+        navigate('/dashboard/widgets');
+      } catch (error) {
+        console.error('Error deleting widget:', error);
+      }
+    }
+  };
+
+  // Get preview of testimonials that would be included
+  const getPreviewTestimonials = () => {
+    return testimonials.filter(t => {
+      const sourceMatch = selectedSources.includes(t.source);
+      const tagMatch = tags.length === 0 || 
+        tags.some(tag => t.content.toLowerCase().includes(tag.toLowerCase()));
+      const statusMatch = t.status === 'approved';
+      
+      return sourceMatch && tagMatch && statusMatch;
+    }).slice(0, formData.max_testimonials);
+  };
+
+  const previewTestimonials = getPreviewTestimonials();
+
+  return (
+    <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center space-x-4 animate-fade-in">
+        <button
+          onClick={() => navigate('/dashboard/widgets')}
+          className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+        >
+          <ArrowLeft className="w-6 h-6 text-gray-600" />
+        </button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+            Edit Widget
+          </h1>
+          <p className="text-gray-600 text-lg">Modify your testimonial widget settings</p>
+        </div>
+        <button
+          onClick={handleDelete}
+          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+        >
+          <Trash2 className="w-4 h-4" />
+          <span>Delete Widget</span>
+        </button>
+      </div>
+
+      {/* Form */}
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Form Column */}
+        <div className="lg:col-span-2">
+          <form onSubmit={handleSubmit} className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/20 animate-slide-up">
+            <div className="space-y-8">
+              {/* Basic Information */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Basic Information</h2>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Widget Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Homepage Testimonials"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    required
+                  />
+                </div>
+                
+                <div>
+				  <label className="block text-sm font-semibold text-gray-700 mb-2">Widget Type</label>
+				  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					{[
+					  { type: 'wall', label: 'Wall of Love', desc: 'Grid layout with multiple testimonials', icon: Layout },
+					  { type: 'carousel', label: 'Carousel', desc: 'Sliding testimonials with autoplay', icon: Play },
+					  { type: 'single', label: 'Single', desc: 'One testimonial at a time', icon: Quote },
+					  { type: 'masonry', label: 'Masonry Grid', desc: 'Pinterest-style varying heights', icon: Grid3X3 },
+					  { type: 'list', label: 'List View', desc: 'Social media feed style', icon: List },
+					  { type: 'floating', label: 'Floating Bubbles', desc: 'Interactive floating avatars', icon: Zap },
+					  { type: 'featured', label: 'Featured Spotlight', desc: 'One main + supporting reviews', icon: Heart },
+					  { type: 'awards', label: 'Top Review', desc: 'Prestigious showcase format', icon: Trophy }
+					].map((option) => (
+					  <label key={option.type} className="cursor-pointer">
+						<input
+						  type="radio"
+						  name="type"
+						  value={option.type}
+						  checked={formData.type === option.type}
+						  onChange={handleInputChange}
+						  className="sr-only"
+						/>
+						<div className={`border-2 rounded-xl p-4 transition-all duration-200 ${
+						  formData.type === option.type
+							? 'border-purple-500 bg-purple-50'
+							: 'border-gray-200 hover:border-purple-300'
+						}`}>
+						  <div className="text-center">
+							<div className={`w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2 ${
+							  formData.type === option.type ? 'bg-purple-500' : 'bg-purple-100'
+							}`}>
+							  <option.icon className={`w-4 h-4 ${
+								formData.type === option.type ? 'text-white' : 'text-purple-600'
+							  }`} />
+							</div>
+							<h4 className="font-semibold text-gray-900 text-sm">{option.label}</h4>
+							<p className="text-xs text-gray-600 mt-1">{option.desc}</p>
+						  </div>
+						</div>
+					  </label>
+					))}
+				  </div>
+				</div>
+                
+              </div>
+
+              {/* Content Sources */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Content Sources</h2>
+                <p className="text-sm text-gray-600">Select the testimonials you want to display in this widget.</p>
+                
+                <div className="space-y-3">
+                  {/* Select All Option */}
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <input 
+                      type="checkbox" 
+                      id="select-all-sources"
+                      checked={selectedSources.length === availableSources.length}
+                      onChange={handleSelectAllSources}
+                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" 
+                    />
+                    <label htmlFor="select-all-sources" className="text-sm font-medium text-gray-900">
+                      Select All Sources
+                    </label>
+                  </div>
+                  
+                  {/* Individual Sources */}
+                  {availableSources.map((source) => (
+                    <div key={source.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 hover:border-purple-200 transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <input 
+                          type="checkbox" 
+                          id={`source-${source.id}`}
+                          checked={selectedSources.includes(source.id)}
+                          onChange={() => handleSourceToggle(source.id)}
+                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" 
+                        />
+                        <label htmlFor={`source-${source.id}`} className="text-sm font-medium text-gray-700">
+                          {source.label}
+                        </label>
+                      </div>
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                        {source.count} testimonials
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filter by Tags */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Filter by Tags (Optional)</h2>
+                <p className="text-sm text-gray-600">Only show testimonials that have at least one of these tags.</p>
+                
+                <div className="space-y-3">
+                  {/* Tag Input */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyPress={handleTagInputKeyPress}
+                      placeholder="Type a tag and press Enter (e.g., Homepage, Product-A)"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 pr-10"
+                    />
+                    <Tag className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  </div>
+                  
+                  {/* Selected Tags */}
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center space-x-2 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium"
+                        >
+                          <span>{tag}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeTag(tag)}
+                            className="text-purple-600 hover:text-purple-800 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Appearance Settings */}
+              <div className="space-y-6">
+                <h2 className="text-xl font-bold text-gray-900 border-b border-gray-200 pb-2">Appearance Settings</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Theme</label>
+                    <select 
+                      name="theme"
+                      value={formData.theme}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="light">Light</option>
+                      <option value="dark">Dark</option>
+                      <option value="auto">Auto</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Max Testimonials</label>
+                    <select 
+                      name="max_testimonials"
+                      value={formData.max_testimonials}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    >
+                      <option value="5">5</option>
+                      <option value="10">10</option>
+                      <option value="15">15</option>
+                      <option value="20">20</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Animation Style</label>
+                  <select 
+                    name="animation_style"
+                    value={formData.animation_style}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                  >
+                    <option value="fade">Fade In</option>
+                    <option value="slide">Slide Up</option>
+                    <option value="scale">Scale In</option>
+                    <option value="bounce">Bounce</option>
+                    <option value="none">No Animation</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Display Options</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { id: 'show_ratings', name: 'show_ratings', label: 'Show star ratings' },
+                      { id: 'show_avatars', name: 'show_avatars', label: 'Show customer avatars' },
+                      { id: 'show_company', name: 'show_company', label: 'Show company names' },
+                      { id: 'autoplay', name: 'autoplay', label: 'Enable autoplay (carousel only)' }
+                    ].map((option) => (
+                      <div key={option.id} className="flex items-center space-x-3">
+                        <input 
+                          type="checkbox" 
+                          id={option.id}
+                          name={option.name}
+                          checked={formData[option.name as keyof typeof formData] as boolean}
+                          onChange={handleInputChange}
+                          className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500" 
+                        />
+                        <label htmlFor={option.id} className="text-sm text-gray-700">{option.label}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Form Actions */}
+            <div className="flex space-x-4 mt-8 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/widgets')}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl font-semibold transition-all duration-200"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || selectedSources.length === 0}
+                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    <span>Saving...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Save Changes</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* Preview Column */}
+        <div className="lg:col-span-1">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 sticky top-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Live Preview</h3>
+            
+            {/* Widget Preview */}
+            <div className="mb-4">
+              <WidgetPreview
+                type={formData.type}
+                theme={formData.theme}
+                animationStyle={formData.animation_style}
+                showRatings={formData.show_ratings}
+                showAvatars={formData.show_avatars}
+                showCompany={formData.show_company}
+                autoplay={formData.autoplay}
+                testimonials={previewTestimonials}
+                maxTestimonials={Math.min(formData.max_testimonials, 3)}
+              />
+            </div>
+
+            {/* Stats */}
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Total testimonials:</span>
+                <span className="font-semibold">{previewTestimonials.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Selected sources:</span>
+                <span className="font-semibold">{selectedSources.length}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Filter tags:</span>
+                <span className="font-semibold">{tags.length}</span>
+              </div>
+            </div>
+
+            {selectedSources.length === 0 && (
+              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 text-sm">Please select at least one source to continue.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EditWidget;
