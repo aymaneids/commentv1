@@ -167,6 +167,62 @@ const WidgetPreview: React.FC<{
         </div>
       );
 
+    case 'infinite-scroll':
+      // Create extended testimonials for seamless infinite scroll
+      const extendedTestimonials = Array.from({ length: 12 }, (_, i) => ({
+        ...displayTestimonials[i % displayTestimonials.length],
+        id: `${displayTestimonials[i % displayTestimonials.length]?.id || 'default'}-${i}`
+      }));
+
+      return (
+        <div className={`rounded-xl p-4 ${getThemeClasses()} border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} relative overflow-hidden h-64`}>
+          {/* Gradient Masks */}
+          <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
+          
+          <div className="absolute inset-0 grid grid-cols-3 gap-2">
+            {/* First Column - Moving Up */}
+            <div className="relative overflow-hidden">
+              <div className="flex flex-col gap-2 animate-scroll-up">
+                {[...extendedTestimonials, ...extendedTestimonials].map((testimonial, index) => (
+                  <div key={`col1-${index}`} className="flex-shrink-0">
+                    <div className="scale-75 origin-top">
+                      <TestimonialCard testimonial={testimonial} index={index} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Second Column - Moving Down */}
+            <div className="relative overflow-hidden">
+              <div className="flex flex-col gap-2 animate-scroll-down">
+                {[...extendedTestimonials, ...extendedTestimonials].slice().reverse().map((testimonial, index) => (
+                  <div key={`col2-${index}`} className="flex-shrink-0">
+                    <div className="scale-75 origin-top">
+                      <TestimonialCard testimonial={testimonial} index={index} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Third Column - Moving Up with Delay */}
+            <div className="relative overflow-hidden">
+              <div className="flex flex-col gap-2 animate-scroll-up-delayed">
+                {[...extendedTestimonials, ...extendedTestimonials].map((testimonial, index) => (
+                  <div key={`col3-${index}`} className="flex-shrink-0">
+                    <div className="scale-75 origin-top">
+                      <TestimonialCard testimonial={testimonial} index={index} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
     default:
       return null;
   }
@@ -624,26 +680,22 @@ const EditWidget: React.FC = () => {
 
         {/* Preview Column */}
         <div className="lg:col-span-1">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 sticky top-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Live Preview</h3>
-            
-            {/* Widget Preview */}
-            <div className="mb-4">
-              <WidgetPreview
-                type={formData.type}
-                theme={formData.theme}
-                animationStyle={formData.animation_style}
-                showRatings={formData.show_ratings}
-                showAvatars={formData.show_avatars}
-                showCompany={formData.show_company}
-                autoplay={formData.autoplay}
-                testimonials={previewTestimonials}
-                maxTestimonials={Math.min(formData.max_testimonials, 3)}
-              />
-            </div>
+          <div className="sticky top-6">
+            <WidgetPreview
+              type={formData.type}
+              theme={formData.theme}
+              animationStyle={formData.animation_style}
+              showRatings={formData.show_ratings}
+              showAvatars={formData.show_avatars}
+              showCompany={formData.show_company}
+              autoplay={formData.autoplay}
+              testimonials={previewTestimonials}
+              maxTestimonials={Math.min(formData.max_testimonials, 3)}
+            />
 
             {/* Stats */}
-            <div className="space-y-3">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/20 mt-6">
+              <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Total testimonials:</span>
                 <span className="font-semibold">{previewTestimonials.length}</span>
@@ -656,13 +708,14 @@ const EditWidget: React.FC = () => {
                 <span className="text-gray-600">Filter tags:</span>
                 <span className="font-semibold">{tags.length}</span>
               </div>
-            </div>
 
-            {selectedSources.length === 0 && (
-              <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-amber-800 text-sm">Please select at least one source to continue.</p>
+              {selectedSources.length === 0 && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-amber-800 text-sm">Please select at least one source to continue.</p>
+                </div>
+              )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

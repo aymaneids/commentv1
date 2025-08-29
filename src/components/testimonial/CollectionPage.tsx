@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { getCollectionLinkByUsernameAndSlug } from '../../lib/supabase';
+import { supabase, getCollectionLinkByUsernameAndSlug } from '../../lib/supabase';
 import { Star, Send, Video, Camera, CheckCircle, Heart } from 'lucide-react';
 
 interface CollectionLink {
@@ -13,10 +12,25 @@ interface CollectionLink {
   collect_email: boolean;
   custom_message?: string;
   user_id: string;
+  views_count?: number;
+  submissions_count?: number;
 }
 
-const CollectionPage: React.FC = () => {
-  const { linkId } = useParams<{ linkId: string }>();
+interface CollectionPageProps {
+  customUrl?: {
+    username: string;
+    slug: string;
+  };
+}
+
+const CollectionPage: React.FC<CollectionPageProps> = ({ customUrl }) => {
+  const params = useParams<{ linkId?: string; username?: string; slug?: string }>();
+  
+  // Determine which parameters to use based on the route
+  const linkId = !customUrl ? params.linkId : undefined;
+  const username = customUrl ? customUrl.username : params.username;
+  const slug = customUrl ? customUrl.slug : params.slug;
+
   const [link, setLink] = useState<CollectionLink | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -25,39 +39,55 @@ const CollectionPage: React.FC = () => {
     client_name: '',
     client_email: '',
     content: '',
-    rating: 5
+    rating: 5,
   });
 
   useEffect(() => {
     const fetchLink = async () => {
-      if (!linkId) return;
+      // Ensure we have either a linkId or a username/slug pair
+      if (!linkId && !(username && slug)) {
+        setLoading(false);
+        return;
+      }
 
       try {
-        const { data, error } = await supabase
-          .from('collection_links')
-          .select('*')
-          .eq('id', linkId)
-          .eq('is_active', true)
-          .single();
+        let data: CollectionLink | null = null;
+        let error: any = null;
+
+        if (linkId) {
+          // Fetch by ID for /collect/:linkId routes
+          ({ data, error } = await supabase
+            .from('collection_links')
+            .select('*')
+            .eq('id', linkId)
+            .eq('is_active', true)
+            .single());
+        } else if (username && slug) {
+          // Fetch by username and slug for /c/:username/:slug routes
+          data = await getCollectionLinkByUsernameAndSlug(username, slug);
+        }
 
         if (error) throw error;
+        if (!data) throw new Error('Link not found');
+
         setLink(data);
 
         // Increment view count
         await supabase
           .from('collection_links')
           .update({ views_count: (data.views_count || 0) + 1 })
-          .eq('id', linkId);
+          .eq('id', data.id);
 
-      } catch (error) {
-        console.error('Error fetching collection link:', error);
+      } catch (err) {
+        console.error('Error fetching collection link:', err);
+        setLink(null); // Ensure link is null on error
       } finally {
         setLoading(false);
       }
     };
 
     fetchLink();
-  }, [linkId]);
+  }, [linkId, username, slug]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +106,7 @@ const CollectionPage: React.FC = () => {
           content: formData.content,
           rating: formData.rating,
           source: 'direct',
-          status: 'pending'
+          status: 'pending',
         });
 
       if (error) throw error;
@@ -84,7 +114,7 @@ const CollectionPage: React.FC = () => {
       // Increment submissions count
       await supabase
         .from('collection_links')
-        .update({ submissions_count: ((link as any).submissions_count || 0) + 1 })
+        .update({ submissions_count: (link.submissions_count || 0) + 1 })
         .eq('id', link.id);
 
       setSubmitted(true);
@@ -98,7 +128,7 @@ const CollectionPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     }));
   };
 

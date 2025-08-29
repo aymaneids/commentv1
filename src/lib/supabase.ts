@@ -84,3 +84,33 @@ export const validateUsernameFormat = (username: string) => {
   }
   return { valid: true, message: '' };
 };
+
+// Add this to the end of src/lib/supabase.ts
+
+export const getCollectionLinkByUsernameAndSlug = async (username: string, slug: string) => {
+  // First, get the user's ID from their username
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  if (userError || !userData) {
+    throw new Error('User not found');
+  }
+
+  // Now, get the collection link using the user_id and slug
+  const { data: linkData, error: linkError } = await supabase
+    .from('collection_links')
+    .select('*')
+    .eq('user_id', userData.id)
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single();
+
+  if (linkError) {
+    throw linkError;
+  }
+
+  return linkData;
+};

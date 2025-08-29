@@ -32,7 +32,7 @@ export interface Widget {
   id: string;
   user_id: string;
   widget_name: string;
-  widget_type: 'wall' | 'carousel' | 'single' | 'masonry' | 'list' | 'floating' | 'featured' | 'awards';
+  widget_type: 'wall' | 'carousel' | 'single' | 'masonry' | 'list' | 'floating' | 'featured' | 'awards' | 'infinite-scroll';
   settings: {
     theme: 'light' | 'dark' | 'auto';
     max_testimonials: number;

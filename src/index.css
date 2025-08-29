@@ -61,6 +61,38 @@
   animation: scale-in 0.3s ease-out forwards;
 }
 
+/* Infinite scroll animations */
+@keyframes scroll-up {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes scroll-down {
+  0% {
+    transform: translateY(-50%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-scroll-up {
+  animation: scroll-up 30s linear infinite;
+}
+
+.animate-scroll-down {
+  animation: scroll-down 30s linear infinite;
+}
+
+.animate-scroll-up-delayed {
+  animation: scroll-up 30s linear infinite;
+  animation-delay: -10s;
+}
+
 /* Backdrop blur support */
 .backdrop-blur-sm {
   backdrop-filter: blur(4px);
