@@ -81,15 +81,15 @@
 }
 
 .animate-scroll-up {
-  animation: scroll-up 30s linear infinite;
+  animation: scroll-up 60s linear infinite;
 }
 
 .animate-scroll-down {
-  animation: scroll-down 30s linear infinite;
+  animation: scroll-down 60s linear infinite;
 }
 
 .animate-scroll-up-delayed {
-  animation: scroll-up 30s linear infinite;
+  animation: scroll-up 60s linear infinite;
   animation-delay: -10s;
 }
 

@@ -184,22 +184,13 @@ const DemoLandingPage: React.FC = () => {
           </div>
 
           {/* Widget Preview Container */}
-          <div className="max-w-4xl mx-auto">
+          <div className="w-full">
             <div className="relative">
               {/* Widget Preview */}
-              <WidgetPreview 
-                widget={widget} 
+              <WidgetPreview
+                widget={widget}
                 testimonials={testimonials}
-                className="shadow-xl"
               />
-              
-              {/* Widget Info Overlay */}
-              <div className="absolute -top-4 -right-4 bg-gradient-to-r from-purple-500 to-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>Live Widget: {widget.name}</span>
-                </div>
-              </div>
             </div>
 
             {/* Widget Details */}
