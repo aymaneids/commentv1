@@ -8,15 +8,17 @@ interface WidgetPreviewProps {
   className?: string;
 }
 
+TypeScript
+
 const WidgetPreview: React.FC<WidgetPreviewProps> = ({
   widget,
   testimonials,
   className = ''
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
-  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [activeBubble, setActiveBubble] = useState<string | null>(null); // <-- ADD THIS LINE
   const displayTestimonials = testimonials.slice(0, widget.settings.max_testimonials);
+
 
   React.useEffect(() => {
     if (widget.widget_type === 'carousel' && widget.settings.autoplay && displayTestimonials.length > 1) {
@@ -26,6 +28,14 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
       return () => clearInterval(interval);
     }
   }, [widget.widget_type, widget.settings.autoplay, displayTestimonials.length]);
+
+  // ADD THIS NEW useEffect BLOCK
+  React.useEffect(() => {
+    if (widget.widget_type === 'floating' && displayTestimonials.length > 0) {
+      setActiveBubble(displayTestimonials[0].id);
+    }
+  }, [widget.widget_type, displayTestimonials]);
+
 
   const getAnimationClass = () => {
     switch (widget.settings.animation_style) {
@@ -273,67 +283,49 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
       );
 
     case 'floating':
-      // Playful floating bubbles with hover interactions
+      const activeTestimonial = displayTestimonials.find(t => t.id === activeBubble) || displayTestimonials[0];
+      const avatarPositions = [
+        { top: '15%', left: '10%', size: 'w-16 h-16', delay: '0s' },
+        { top: '30%', left: '80%', size: 'w-20 h-20', delay: '1s' },
+        { top: '65%', left: '5%', size: 'w-12 h-12', delay: '2s' },
+        { top: '75%', left: '60%', size: 'w-24 h-24', delay: '0.5s' },
+        { top: '5%', left: '50%', size: 'w-14 h-14', delay: '1.5s' },
+      ];
+      
       return (
-        <div className={`rounded-xl p-8 ${getThemeClasses()} border ${className} relative overflow-hidden`}>
-          <div className="relative h-80">
-            {displayTestimonials.slice(0, 6).map((testimonial, index) => {
-              const positions = [
-                { top: '10%', left: '15%' },
-                { top: '25%', left: '70%' },
-                { top: '45%', left: '20%' },
-                { top: '60%', left: '75%' },
-                { top: '75%', left: '40%' },
-                { top: '15%', left: '45%' }
-              ];
-              
-              return (
-                <div 
-                  key={testimonial.id} 
-                  className="absolute animate-bounce cursor-pointer transition-all duration-300 hover:scale-110"
-                  style={{ 
-                    ...positions[index],
-                    animationDelay: `${index * 800}ms`,
-                    animationDuration: '4s',
-                    animationIterationCount: 'infinite'
-                  }}
-                  onMouseEnter={() => setHoveredBubble(testimonial.id)}
-                  onMouseLeave={() => setHoveredBubble(null)}
-                >
-                  {/* Bubble */}
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg border-4 border-white">
-                    <span className="text-white font-bold text-sm">
-                      {testimonial.client_name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </span>
-                  </div>
-                  
-                  {/* Hover tooltip */}
-                  {hoveredBubble === testimonial.id && (
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-white rounded-lg shadow-xl p-4 border z-10 animate-scale-in">
-                      <div className="text-center">
-                        {widget.settings.show_ratings && (
-                          <div className="flex items-center justify-center mb-2">
-                            {[...Array(testimonial.rating)].map((_, i) => (
-                              <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-sm text-gray-700 mb-2">"{testimonial.content}"</p>
-                        <p className="font-semibold text-gray-900 text-sm">{testimonial.client_name}</p>
-                      </div>
-                      {/* Arrow */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
-                    </div>
-                  )}
+        <div className={`relative overflow-hidden h-[32rem] rounded-2xl bg-slate-50/50 border border-gray-200/80 p-6 flex flex-col justify-end ${className}`}>
+          {/* Floating Avatars */}
+          {displayTestimonials.slice(0, 5).map((testimonial, index) => (
+            <button
+              key={testimonial.id}
+              className={`absolute animate-float transition-all duration-300 hover:scale-110 z-10 ${avatarPositions[index].size}`}
+              style={{ 
+                top: avatarPositions[index].top, 
+                left: avatarPositions[index].left,
+                animationDelay: avatarPositions[index].delay,
+              }}
+              onMouseEnter={() => setActiveBubble(testimonial.id)}
+            >
+              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white">
+                <span className="text-white font-semibold text-2xl">
+                  {testimonial.client_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </span>
+              </div>
+            </button>
+          ))}
+
+          {/* Active Testimonial Card */}
+          <div className="relative z-20">
+            {activeTestimonial && (
+              <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-gray-200/80 animate-fade-in">
+                <blockquote className="text-center text-gray-800 leading-relaxed mb-4 font-medium italic">
+                  "{activeTestimonial.content}"
+                </blockquote>
+                <div className="text-center text-gray-900 font-semibold">
+                  - {activeTestimonial.client_name}
                 </div>
-              );
-            })}
-          </div>
-          
-          <div className="text-center mt-4">
-            <p className={`text-sm ${widget.settings.theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-              Hover over the bubbles to read testimonials
-            </p>
+              </div>
+            )}
           </div>
         </div>
       );

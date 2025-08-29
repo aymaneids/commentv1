@@ -80,6 +80,19 @@
   }
 }
 
+@keyframes float-up-down {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float-up-down 8s ease-in-out infinite;
+}
+
 .animate-scroll-up {
   animation: scroll-up 60s linear infinite;
 }
