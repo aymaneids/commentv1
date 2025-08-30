@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Layout, Play, Quote, Tag, X, Star, Grid3X3, List, Zap, Heart, Trophy } from 'lucide-react';
+import { ArrowLeft, Layout, Play, Quote, Tag, X, Star, Grid3X3, List, Zap, Heart, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TrendingUp } from 'lucide-react';
 import { useWidgets, useTestimonials, useCollectionLinks } from '../../hooks/useTestimonials';
 import { useAuth } from '../../contexts/AuthContext';
@@ -16,16 +16,18 @@ const WidgetPreview: React.FC<{
   autoplay: boolean;
   testimonials: any[];
   maxTestimonials: number;
-}> = ({ 
-  type, 
-  theme, 
-  animationStyle, 
-  showRatings, 
-  showAvatars, 
-  showCompany, 
-  autoplay, 
-  testimonials, 
-  maxTestimonials 
+  className?: string;
+}> = ({
+  type,
+  theme,
+  animationStyle,
+  showRatings,
+  showAvatars,
+  showCompany,
+  autoplay,
+  testimonials,
+  maxTestimonials,
+  className = ''
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const displayTestimonials = testimonials.slice(0, maxTestimonials);
@@ -70,32 +72,44 @@ const WidgetPreview: React.FC<{
   }
 
   const TestimonialCard: React.FC<{ testimonial: any; index?: number }> = ({ testimonial, index = 0 }) => (
-    <div className={`${getAnimationClass()} ${getThemeClasses()} rounded-lg p-4 border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`} 
+    <div className={`${getAnimationClass()} ${getThemeClasses()} rounded-xl p-6 border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200/50'} shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group backdrop-blur-sm`}
          style={{ animationDelay: `${index * 100}ms` }}>
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      <div className="relative z-10">
       {/* Rating */}
       {showRatings && (
-        <div className="flex items-center mb-2">
+        <div className="flex items-center mb-4 group-hover:scale-105 transition-transform duration-200">
           {[...Array(testimonial.rating)].map((_, i) => (
-            <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+            <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
           ))}
         </div>
       )}
       
       {/* Content */}
-      <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+      <blockquote className={`text-base leading-relaxed mb-6 font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-800'} group-hover:text-gray-900 transition-colors duration-200`}>
         "{testimonial.content}"
-      </p>
+      </blockquote>
       
       {/* Author */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-3 group-hover:transform group-hover:scale-105 transition-all duration-200">
         {showAvatars && (
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-semibold">
-              {testimonial.client_name[0]}
-            </span>
+          <div className="relative">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white group-hover:ring-4 group-hover:ring-blue-100 transition-all duration-200">
+              <span className="text-white font-semibold text-sm">
+                {testimonial.client_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              </span>
+            </div>
+            {/* Source Platform Icon */}
+            {testimonial.source && (
+              <div className="absolute -bottom-1 -right-1 bg-white border border-gray-200 rounded-full p-1 shadow-md group-hover:shadow-lg transition-shadow duration-200">
+                {/* Add platform icon logic here if needed */}
+              </div>
+            )}
           </div>
         )}
-        <div>
+        <div className="flex-1 min-w-0">
           <div className={`font-semibold text-sm ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
             {testimonial.client_name}
           </div>
@@ -105,6 +119,7 @@ const WidgetPreview: React.FC<{
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
@@ -124,39 +139,58 @@ const WidgetPreview: React.FC<{
 
     case 'carousel':
       return (
-        <div className={`rounded-xl p-4 ${getThemeClasses()} border ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'} relative`}>
-          <div className="overflow-hidden">
+        <div className={`relative group ${className}`}>
+          <div className="relative overflow-hidden rounded-xl">
             <div 
-              className="flex transition-transform duration-500 ease-in-out"
+              className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
               {displayTestimonials.map((testimonial) => (
-                <div key={testimonial.id} className="w-full flex-shrink-0">
+                <div key={testimonial.id} className="w-full flex-shrink-0 px-4 py-6 text-center">
                   <TestimonialCard testimonial={testimonial} />
                 </div>
               ))}
             </div>
           </div>
           
-          {/* Carousel indicators */}
+          {/* Navigation buttons */}
           {displayTestimonials.length > 1 && (
-            <div className="flex justify-center space-x-2 mt-3">
-              {displayTestimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentIndex ? 'bg-blue-500' : theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
-                  }`}
-                />
-              ))}
-            </div>
+            <>
+              <button
+                onClick={() => setCurrentIndex(prev => prev === 0 ? displayTestimonials.length - 1 : prev - 1)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 z-10"
+              >
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
+              </button>
+              <button
+                onClick={() => setCurrentIndex(prev => (prev + 1) % displayTestimonials.length)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 z-10"
+              >
+                <ChevronRight className="w-5 h-5 text-gray-700" />
+              </button>
+              
+              {/* Carousel indicators */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {displayTestimonials.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`rounded-full transition-all duration-300 ${
+                      index === currentIndex 
+                        ? 'bg-blue-500 w-6 h-2' 
+                        : 'bg-white/60 hover:bg-white/80 w-2 h-2'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
           )}
           
           {/* Autoplay indicator */}
           {autoplay && displayTestimonials.length > 1 && (
-            <div className="absolute top-2 right-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="absolute top-4 right-4 bg-green-500/90 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span>Auto</span>
             </div>
           )}
         </div>

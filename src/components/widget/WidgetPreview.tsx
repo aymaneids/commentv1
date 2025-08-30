@@ -8,17 +8,16 @@ interface WidgetPreviewProps {
   className?: string;
 }
 
-TypeScript
-
 const WidgetPreview: React.FC<WidgetPreviewProps> = ({
   widget,
   testimonials,
   className = ''
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [activeBubble, setActiveBubble] = useState<string | null>(null); // <-- ADD THIS LINE
+  const [activeBubble, setActiveBubble] = useState<string | null>(null);
+  const [hoveredBubble, setHoveredBubble] = useState<string | null>(null);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
   const displayTestimonials = testimonials.slice(0, widget.settings.max_testimonials);
-
 
   React.useEffect(() => {
     if (widget.widget_type === 'carousel' && widget.settings.autoplay && displayTestimonials.length > 1) {
@@ -29,13 +28,11 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
     }
   }, [widget.widget_type, widget.settings.autoplay, displayTestimonials.length]);
 
-  // ADD THIS NEW useEffect BLOCK
   React.useEffect(() => {
     if (widget.widget_type === 'floating' && displayTestimonials.length > 0) {
       setActiveBubble(displayTestimonials[0].id);
     }
   }, [widget.widget_type, displayTestimonials]);
-
 
   const getAnimationClass = () => {
     switch (widget.settings.animation_style) {
@@ -60,7 +57,7 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
         </div>
       </div>
     );
-  };
+  }
 
   // ### TESTIMONIAL CARD COMPONENT ###
   const TestimonialCard: React.FC<{ 
@@ -105,15 +102,15 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
     };
 
     const getCardClasses = () => {
-      const baseClasses = `relative bg-white border border-gray-200/80 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 ease-out hover:-translate-y-1 group ${getAnimationClass()}`;
+      const baseClasses = `relative bg-white border border-gray-200/50 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 ease-out hover:-translate-y-2 group backdrop-blur-sm ${getAnimationClass()}`;
       
       switch (variant) {
         case 'small':
-          return `${baseClasses} p-6`;
+          return `${baseClasses} p-4`;
         case 'large':
-          return `${baseClasses} p-12`;
+          return `${baseClasses} p-8`;
         default:
-          return `${baseClasses} p-10`;
+          return `${baseClasses} p-6`;
       }
     };
 
@@ -133,42 +130,53 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
         className={getCardClasses()}
         style={{ animationDelay: `${index * 100}ms` }}
       >
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
+        <div className="relative z-10">
         {/* Star Rating */}
-        <div className="flex items-center gap-1 mb-4">
-          {renderStars(rating)}
-        </div>
+        {widget.settings.show_ratings && (
+          <div className="flex items-center gap-1 mb-4 group-hover:scale-105 transition-transform duration-200">
+            {renderStars(rating)}
+          </div>
+        )}
 
         {/* Testimonial Text */}
-        <blockquote className={`text-gray-800 leading-relaxed mb-6 font-medium flex-1 ${getTextClasses()}`}>
+        <blockquote className={`text-gray-800 leading-relaxed mb-6 font-medium flex-1 ${getTextClasses()} group-hover:text-gray-900 transition-colors duration-200`}>
           "{content}"
         </blockquote>
 
         {/* Author Information */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 group-hover:transform group-hover:scale-105 transition-all duration-200">
           {/* Avatar */}
-          <div className="relative">
-            <div className={`${variant === 'large' ? 'w-16 h-16' : 'w-12 h-12'} bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md ring-2 ring-white`}>
-              <span className={`text-white font-semibold ${variant === 'large' ? 'text-lg' : 'text-base'}`}>
-                {client_name.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </span>
-            </div>
-            {/* Source Platform Icon */}
-            {source && (
-              <div className="absolute -bottom-1 -right-1 bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-                {getPlatformIcon(source)}
+          {widget.settings.show_avatars && (
+            <div className="relative">
+              <div className={`${variant === 'large' ? 'w-16 h-16' : 'w-12 h-12'} bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg ring-2 ring-white group-hover:ring-4 group-hover:ring-blue-100 transition-all duration-200`}>
+                <span className={`text-white font-semibold ${variant === 'large' ? 'text-lg' : 'text-base'}`}>
+                  {client_name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </span>
               </div>
-            )}
-          </div>
+              {/* Source Platform Icon */}
+              {source && (
+                <div className="absolute -bottom-1 -right-1 bg-white border border-gray-200 rounded-full p-1 shadow-md group-hover:shadow-lg transition-shadow duration-200">
+                  {getPlatformIcon(source)}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Author Details */}
           <div className="flex-1 min-w-0">
             <div className={`text-gray-900 font-semibold ${variant === 'large' ? 'text-base' : 'text-sm'}`}>
               {client_name}
             </div>
-            <div className={`text-gray-500 leading-tight ${variant === 'large' ? 'text-sm' : 'text-xs'}`}>
-              {["credo"].filter(Boolean).join(" • ")}
-            </div>
+            {widget.settings.show_company && client_email && (
+              <div className={`text-gray-500 leading-tight ${variant === 'large' ? 'text-sm' : 'text-xs'}`}>
+                {client_email.split('@')[1] || 'Customer'}
+              </div>
+            )}
           </div>
+        </div>
         </div>
       </div>
     );
@@ -190,14 +198,14 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
 
     case 'carousel':
       return (
-        <div className={`relative ${className}`}>
-           <div className="relative overflow-hidden">
+        <div className={`relative ${className} group`}>
+          <div className="relative overflow-hidden rounded-xl">
             <div 
-              className="flex transition-transform duration-700 ease-in-out"
+              className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
             >
               {displayTestimonials.map((testimonial) => (
-                <div key={testimonial.id} className="w-full flex-shrink-0 p-2">
+                <div key={testimonial.id} className="w-full flex-shrink-0 px-4 py-6 text-center">
                   <TestimonialCard testimonial={testimonial} />
                 </div>
               ))}
@@ -208,17 +216,40 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
             <>
               <button
                 onClick={() => setCurrentIndex(prev => prev === 0 ? displayTestimonials.length - 1 : prev - 1)}
-                className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 z-10"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
+                <ChevronLeft className="w-5 h-5 text-gray-700" />
               </button>
               <button
                 onClick={() => setCurrentIndex(prev => (prev + 1) % displayTestimonials.length)}
-                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/90 hover:bg-white shadow-lg transition-all duration-200 hover:scale-110 opacity-0 group-hover:opacity-100 z-10"
               >
-                <ChevronRight className="w-5 h-5 text-gray-600" />
+                <ChevronRight className="w-5 h-5 text-gray-700" />
               </button>
+              
+              {/* Carousel indicators */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                {displayTestimonials.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentIndex 
+                        ? 'bg-blue-500 w-6' 
+                        : 'bg-white/60 hover:bg-white/80'
+                    }`}
+                  />
+                ))}
+              </div>
             </>
+          )}
+          
+          {/* Autoplay indicator */}
+          {widget.settings.autoplay && displayTestimonials.length > 1 && (
+            <div className="absolute top-4 right-4 bg-green-500/90 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span>Auto</span>
+            </div>
           )}
         </div>
       );
@@ -231,7 +262,6 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
       );
 
     case 'list':
-      // Clean social media feed style
       return (
         <div className={`rounded-xl p-6 ${getThemeClasses()} border ${className}`}>
           <div className="divide-y divide-gray-200">
@@ -318,12 +348,24 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
           <div className="relative z-20">
             {activeTestimonial && (
               <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 shadow-2xl border border-gray-200/80 animate-fade-in">
+                {widget.settings.show_ratings && (
+                  <div className="flex items-center justify-center mb-4">
+                    {[...Array(activeTestimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                    ))}
+                  </div>
+                )}
                 <blockquote className="text-center text-gray-800 leading-relaxed mb-4 font-medium italic">
                   "{activeTestimonial.content}"
                 </blockquote>
                 <div className="text-center text-gray-900 font-semibold">
                   - {activeTestimonial.client_name}
                 </div>
+                {widget.settings.show_company && activeTestimonial.client_email && (
+                  <div className="text-center text-gray-600 text-sm mt-1">
+                    {activeTestimonial.client_email.split('@')[1]}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -331,7 +373,6 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
       );
 
     case 'featured':
-      // Featured spotlight with hierarchy
       return (
         <div className={`rounded-xl p-6 ${getThemeClasses()} border ${className}`}>
           {/* Featured testimonial */}
@@ -372,7 +413,6 @@ const WidgetPreview: React.FC<WidgetPreviewProps> = ({
       );
 
     case 'awards':
-      // Prestigious, high-end showcase
       return (
         <div className={`rounded-xl p-8 ${getThemeClasses()} border-2 border-yellow-200 ${className} relative`}>
           {/* Decorative elements */}
